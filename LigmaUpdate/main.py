@@ -34,7 +34,7 @@ def update_packages():
     packages = [d for d in os.listdir(packages_dir) 
                if os.path.isdir(os.path.join(packages_dir, d)) 
                and d != current_pkg  # Protect ourselves from deletion
-               and d != "SigmaOS-main"]  # Ignore leftover dirs
+               and d != "SigmaOS-packages-main"]  # Ignore leftover dirs from new repo
 
     if not packages:
         print(f"{Fore.YELLOW}No packages to update!{Style.RESET_ALL}")
@@ -68,7 +68,7 @@ def update_packages():
     for pkg in packages_to_update:
         try:
             loading_animation(f"Installing {pkg}")
-            download_package(pkg)
+            download_package(pkg)  # This will use the new repo location from SigmaOS.py
             time.sleep(0.5)  # Small delay between installations
         except Exception as e:
             print(f"{Fore.RED}Error installing {pkg}: {e}{Style.RESET_ALL}")

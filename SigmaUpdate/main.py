@@ -52,7 +52,7 @@ def update_sigma():
     
     try:
         # Download new version
-        url = "https://raw.githubusercontent.com/Lominub44/SigmaOS/main/SigmaOS.py"
+        url = "https://raw.githubusercontent.com/The404Company/SigmaOS/main/SigmaOS.py"
         loading_animation("Downloading latest version")
         response = requests.get(url)
         response.raise_for_status()

@@ -5,7 +5,7 @@ Updates installed packages to their latest versions
 SigmaOS-Team
 
 [version]
-1.0
+1.0.1
 
 [requirements]
 colorama
