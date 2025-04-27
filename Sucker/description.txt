@@ -1,0 +1,12 @@
+[description]
+Download files from the internet into your documents folder
+
+[author]
+SigmaOS-Team
+
+[version]
+1.0
+
+[requirements]
+requests
+colorama
