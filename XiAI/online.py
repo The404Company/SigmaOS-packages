@@ -4,12 +4,11 @@ import requests
 import json
 from colorama import Fore, Style, init
 
-# Initialize colorama
 init(autoreset=True)
 
 # OpenRouter API settings
 API_KEY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api.key")
-MODEL = "mistralai/mistral-7b-instruct:free" # please dont use paid models.
+MODEL = "mistralai/mistral-7b-instruct:free" 
 SYSTEM_PROMPT_FILE = "XiAI.txt"
 
 def clear_screen():
@@ -77,9 +76,9 @@ def chat():
             
             headers = {
                 "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://the404company.github.io/SigmaOS.html", # Optional. Site URL for rankings on openrouter.ai.
+                "Content-Type": "application/json"
                 "X-Title": "SigmaOS", # Optional. Site title for rankings on openrouter.ai.
+                "HTTP-Referer": "https://the404company.github.io/SigmaOS.html", # Optional. Site URL for rankings on openrouter.ai.
             }
             data = {
                 "model": MODEL,

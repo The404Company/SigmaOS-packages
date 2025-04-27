@@ -1,3 +1,4 @@
+# SigmaOS_core v1.0
 from colorama import Fore, Style
 import os
 import time
