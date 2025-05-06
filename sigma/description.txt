@@ -1,0 +1,15 @@
+[Description]
+Core utilities for SigmaOS administration and management
+
+[Author]
+The404Company
+
+[Version]
+1.0.0
+
+[Requirements]
+requests
+colorama
+datetime 
+pywifi
+comtypes 
