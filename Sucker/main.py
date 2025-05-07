@@ -23,10 +23,6 @@ def download_task(url: str, dest_path: str):
 
     return f"{Fore.GREEN}Saved to{Style.RESET_ALL} documents"
 
-    
-    
-        
-
 def main():
     clear_screen()
     # 1) prompt for URL
