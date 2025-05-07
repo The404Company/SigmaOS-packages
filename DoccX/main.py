@@ -1,7 +1,59 @@
 import os
 import sys
 from colorama import Fore, Style, init, Back
-import msvcrt
+import platform
+
+# Cross-platform keyboard input
+if platform.system() == 'Windows':
+    import msvcrt
+    
+    def getch():
+        """Get a single character from the user (Windows)"""
+        return msvcrt.getch()
+    
+    def get_special_key():
+        """Handle special keys like arrows (Windows)"""
+        key = msvcrt.getch()
+        return key
+else:
+    # For Linux/Mac
+    import termios
+    import tty
+    import select
+    
+    def getch():
+        """Get a single character from the user (Unix)"""
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            if select.select([sys.stdin], [], [], 0.1)[0]:
+                ch = sys.stdin.read(1)
+            else:
+                ch = ''
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch.encode('utf-8') if ch else b''
+    
+    def get_special_key():
+        """Handle special keys like arrows (Unix)"""
+        # In Linux, arrow keys are represented by escape sequences
+        # First character is escape (27), second is '[', third is the specific key
+        key = getch()
+        if key == b'\x1b':
+            key = getch()  # should be b'['
+            if key == b'[':
+                key = getch()
+                # Map to Windows-style codes for compatibility
+                if key == b'A':
+                    return b'H'  # Up arrow -> Home (simplified mapping)
+                elif key == b'B':
+                    return b'F'  # Down arrow -> End (simplified mapping)
+                elif key == b'C':
+                    return b'M'  # Right arrow
+                elif key == b'D':
+                    return b'K'  # Left arrow
+        return key
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -104,8 +156,8 @@ def view_file(filepath):
             print(f"{Fore.WHITE}← → arrows to change page | Home/End for first/last page")
             print(f"/ to search | ESC to exit{Style.RESET_ALL}")
 
-            # Handle keyboard input
-            key = msvcrt.getch()
+            # Handle keyboard input - cross-platform
+            key = getch()
             if key == b'\x1b':  # ESC
                 break
             elif key == b'/':  # Search
@@ -117,8 +169,8 @@ def view_file(filepath):
                         if search_term in line.lower():
                             current_page = i // page_size
                             break
-            elif key == b'\xe0':  # Special key prefix
-                key = msvcrt.getch()
+            elif key == b'\xe0' or (platform.system() != 'Windows' and key == b'\x1b'):  # Special key prefix
+                key = get_special_key()
                 if key == b'K':  # Left arrow
                     current_page = max(0, current_page - 1)
                 elif key == b'M':  # Right arrow

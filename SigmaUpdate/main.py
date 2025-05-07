@@ -5,6 +5,8 @@ import time
 import psutil
 import signal
 import subprocess
+import sys
+import platform
 from datetime import datetime
 from colorama import Fore, Style
 
@@ -18,20 +20,39 @@ def loading_animation(message, duration=2):
         i = (i + 1) % len(frames)
     print(f"\r{Fore.GREEN}✓ {message}{Style.RESET_ALL}")
 
+def get_current_pid():
+    """Get the current process ID"""
+    return os.getpid()
+
 def force_terminate_sigmaos():
+    """Terminates SigmaOS processes except for the current one"""
+    current_pid = get_current_pid()
+    parent_pid = os.getppid()
+    
+    # Log info about the current process
+    print(f"{Fore.CYAN}Current process: PID={current_pid}, Parent PID={parent_pid}{Style.RESET_ALL}")
+    
+    terminated = False
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
+            pid = proc.info['pid']
             cmdline = proc.info['cmdline']
+            # Skip the current process and its parent
+            if pid == current_pid or pid == parent_pid:
+                continue
+                
             if cmdline and 'python' in cmdline[0].lower() and 'sigmaos.py' in cmdline[-1].lower():
+                print(f"{Fore.YELLOW}Terminating SigmaOS process: PID={pid}{Style.RESET_ALL}")
                 # Force kill the process
-                if os.name == 'nt':  # Windows
-                    os.kill(proc.pid, signal.SIGTERM)
+                if platform.system() == 'Windows':  # Windows
+                    os.kill(pid, signal.SIGTERM)
                 else:  # Linux/Mac
-                    os.kill(proc.pid, signal.SIGKILL)
-                return True
-        except:
+                    os.kill(pid, signal.SIGKILL)
+                terminated = True
+        except Exception as e:
+            print(f"{Fore.RED}Error terminating process: {str(e)}{Style.RESET_ALL}")
             continue
-    return False
+    return terminated
 
 def update_sigma():
     # Get absolute paths - make sure we're in root directory
@@ -45,10 +66,12 @@ def update_sigma():
     print(f"Target file: {target_file}")
     
     # Force terminate existing SigmaOS process
-    print(f"{Fore.YELLOW}Terminating SigmaOS process...{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}Looking for SigmaOS processes to terminate...{Style.RESET_ALL}")
     if force_terminate_sigmaos():
         loading_animation("SigmaOS process terminated")
         time.sleep(1)
+    else:
+        print(f"{Fore.YELLOW}No other SigmaOS processes found to terminate.{Style.RESET_ALL}")
     
     try:
         # Download new version
@@ -81,17 +104,42 @@ def update_sigma():
         print(f"{Fore.GREEN}File replacement successful!{Style.RESET_ALL}")
         time.sleep(1)
         
-        # Start new instance from correct location
-        print(f"{Fore.CYAN}Starting SigmaOS from: {target_file}{Style.RESET_ALL}")
-        if os.name == 'nt':
-            os.chdir(root_dir)  # Change to root directory first
-            subprocess.Popen(['python', target_file], 
-                           creationflags=subprocess.CREATE_NEW_CONSOLE)
-        else:
-            subprocess.Popen(['python3', target_file], 
-                           start_new_session=True, cwd=root_dir)
+        # Start new instance using a separate script that won't be killed
+        print(f"{Fore.CYAN}Preparing to start new SigmaOS instance...{Style.RESET_ALL}")
         
-        print(f"{Fore.GREEN}Update complete! New instance started.{Style.RESET_ALL}")
+        # Create a small launcher script
+        launcher_script = os.path.join(root_dir, "launch_sigmaos.py")
+        with open(launcher_script, 'w') as f:
+            f.write(f"""
+import os
+import subprocess
+import time
+import platform
+
+# Wait for the parent process to exit
+time.sleep(1)
+
+# Start SigmaOS
+python_cmd = 'python3' if platform.system() != 'Windows' else 'python'
+os.chdir({repr(root_dir)})  # Change to root directory
+cmd = [python_cmd, {repr(target_file)}]
+
+if platform.system() == 'Windows':
+    subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
+else:
+    subprocess.Popen(cmd, start_new_session=True)
+""")
+        
+        # Run the launcher script
+        python_cmd = 'python3' if platform.system() != 'Windows' else 'python'
+        subprocess.Popen([python_cmd, launcher_script], 
+                         start_new_session=True if platform.system() != 'Windows' else False,
+                         creationflags=subprocess.CREATE_NEW_CONSOLE if platform.system() == 'Windows' else 0)
+        
+        print(f"{Fore.GREEN}Update complete! New instance will start automatically.{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Exiting updater...{Style.RESET_ALL}")
+        time.sleep(2)
+        sys.exit(0)
         
     except Exception as e:
         print(f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}")

@@ -1,11 +1,11 @@
 [description]
-Updates the SigmaOS system to the latest version
+Update SigmaOS to the latest version from GitHub. Enhanced for better cross-platform compatibility (Windows/Linux/Mac).
 
 [author]
 SigmaOS-Team
 
 [version]
-1.0.1
+1.1
 
 [requirements]
 colorama

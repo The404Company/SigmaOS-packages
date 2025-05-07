@@ -1,11 +1,11 @@
 [description]
-A simple document viewer for reading files in the documents directory
+A simple document viewer for reading files in the documents directory. Cross-platform compatible (Windows/Linux/Mac).
 
 [author]
 SigmaOS-Team
 
 [version]
-1.0
+1.1
 
 [requirements]
 colorama

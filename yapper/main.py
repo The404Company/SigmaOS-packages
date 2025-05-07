@@ -1,29 +1,74 @@
 import os
-import msvcrt
 import sys
+import platform
 from colorama import Fore, Style, init
 
-def get_key():
-    # there's a lot of stuff here thats not needed but i dont care
-    key = msvcrt.getch()
-    if key == b'\x1b':  # Escape key
-        return 'exit'
-    elif key == b'\r':  # Enter key
-        return 'enter'
-    elif key == b'\x08':  # Backspace key
-        return 'backspace'
-    elif key == b'\xe0':  # Special keys (arrows, function keys)
+# Cross-platform keyboard input
+if platform.system() == 'Windows':
+    import msvcrt
+    
+    def get_key():
+        """Get a single key press on Windows"""
         key = msvcrt.getch()
-        if key == b'H':  # Up arrow
-            return 'up'
-        elif key == b'P':  # Down arrow
-            return 'down'
-        elif key == b'K':  # Left arrow
-            return 'left'
-        elif key == b'M':  # Right arrow
-            return 'right'
-    else:
-        return key.decode('ascii') if len(key) == 1 else None
+        if key == b'\x1b':  # Escape key
+            return 'exit'
+        elif key == b'\r':  # Enter key
+            return 'enter'
+        elif key == b'\x08':  # Backspace key
+            return 'backspace'
+        elif key == b'\xe0':  # Special keys (arrows, function keys)
+            key = msvcrt.getch()
+            if key == b'H':  # Up arrow
+                return 'up'
+            elif key == b'P':  # Down arrow
+                return 'down'
+            elif key == b'K':  # Left arrow
+                return 'left'
+            elif key == b'M':  # Right arrow
+                return 'right'
+        else:
+            return key.decode('ascii', errors='ignore') if len(key) == 1 else None
+else:
+    # For Linux/Mac
+    import termios
+    import tty
+    import select
+    
+    def get_key():
+        """Get a single key press on Linux/Mac"""
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            if select.select([sys.stdin], [], [], 0.1)[0]:
+                ch = sys.stdin.read(1)
+            else:
+                ch = ''
+                
+            # Handle escape sequences for arrow keys
+            if ch == '\x1b':  # Escape key or special key
+                if select.select([sys.stdin], [], [], 0.1)[0]:
+                    ch2 = sys.stdin.read(1)
+                    if ch2 == '[':
+                        if select.select([sys.stdin], [], [], 0.1)[0]:
+                            ch3 = sys.stdin.read(1)
+                            if ch3 == 'A':
+                                return 'up'
+                            elif ch3 == 'B':
+                                return 'down'
+                            elif ch3 == 'C':
+                                return 'right'
+                            elif ch3 == 'D':
+                                return 'left'
+                return 'exit'
+            elif ch == '\n' or ch == '\r':  # Enter key
+                return 'enter'
+            elif ch == '\x7f' or ch == '\b':  # Backspace key
+                return 'backspace'
+            else:
+                return ch if ch else None
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 def show_banner():
     print(f"{Fore.CYAN}Welcome to Yapper!{Style.RESET_ALL}")
@@ -59,8 +104,7 @@ def editor(filename=None):
     
     # Improve scrolling behavior
     def refresh_screen():
-        sys.stdout.write("\033[H")  
-        sys.stdout.write("\033[J")  
+        os.system('cls' if os.name == 'nt' else 'clear')  # More compatible screen clearing
         print(f"{Fore.CYAN}Editing: {filename} {Fore.WHITE}(ESC to save and exit){Style.RESET_ALL}\n")
         
         start_line = max(0, cursor_y - 10)
@@ -129,8 +173,11 @@ def editor(filename=None):
         f.write('\n'.join(content))
     
     print(f"\n{Fore.GREEN}File saved to: {filepath}{Style.RESET_ALL}")
-    os.system('python ' + os.path.join(root_dir, 'SigmaOS.py'))
+    
+    # Cross-platform way to restart SigmaOS
+    python_cmd = 'python3' if platform.system() != 'Windows' else 'python'
+    os.system(f'{python_cmd} ' + os.path.join(root_dir, 'SigmaOS.py'))
 
 if __name__ == "__main__":
-    filename = sys.argv[1] if len(sys.argv) > 1 else None # its broken af
+    filename = sys.argv[1] if len(sys.argv) > 1 else None 
     editor(filename)

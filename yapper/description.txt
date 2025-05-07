@@ -1,12 +1,11 @@
 [description]
-A simple text editor for creating and editing files
+A simple text editor for creating and editing files. Cross-platform compatible (Windows/Linux/Mac).
 
 [author]
 SigmaOS-Team
 
 [version]
-1.1
+1.2
 
 [requirements]
 colorama
-msvcrt
