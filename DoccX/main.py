@@ -3,65 +3,57 @@ import sys
 from colorama import Fore, Style, init, Back
 import platform
 
-# Updated cross-platform compatibility for keyboard input and file operations
+# Cross-platform keyboard input
 if platform.system() == 'Windows':
     import msvcrt
-
+    
     def getch():
         """Get a single character from the user (Windows)"""
         return msvcrt.getch()
-
+    
     def get_special_key():
         """Handle special keys like arrows (Windows)"""
-        if msvcrt.kbhit():
-            key = msvcrt.getch()
-            if key == b'\xe0':  # Special key prefix
-                return msvcrt.getch()
-            return key
-        return None
+        key = msvcrt.getch()
+        return key
 else:
+    # For Linux/Mac
     import termios
     import tty
     import select
-
+    
     def getch():
         """Get a single character from the user (Unix)"""
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
         try:
             tty.setraw(fd)
-            ch = sys.stdin.read(1)
+            if select.select([sys.stdin], [], [], 0.1)[0]:
+                ch = sys.stdin.read(1)
+            else:
+                ch = ''
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch.encode()
-
+        return ch.encode('utf-8') if ch else b''
+    
     def get_special_key():
         """Handle special keys like arrows (Unix)"""
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            [i, _, _] = select.select([sys.stdin], [], [], 0.1)
-            if i:
-                key = sys.stdin.read(1)
-                if key == '\x1b':  # Escape sequence
-                    key += sys.stdin.read(2)  # Read next two characters for arrow keys
-                    if key == '\x1b[A':  # Up arrow
-                        return b'H'
-                    elif key == '\x1b[B':  # Down arrow
-                        return b'P'
-                    elif key == '\x1b[C':  # Right arrow
-                        return b'M'
-                    elif key == '\x1b[D':  # Left arrow
-                        return b'K'
-                    elif key == '\x1b[1~':  # Home
-                        return b'H'
-                    elif key == '\x1b[4~':  # End
-                        return b'F'
-                return key.encode()
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return None
+        # In Linux, arrow keys are represented by escape sequences
+        # First character is escape (27), second is '[', third is the specific key
+        key = getch()
+        if key == b'\x1b':
+            key = getch()  # should be b'['
+            if key == b'[':
+                key = getch()
+                # Map to Windows-style codes for compatibility
+                if key == b'A':
+                    return b'H'  # Up arrow -> Home (simplified mapping)
+                elif key == b'B':
+                    return b'F'  # Down arrow -> End (simplified mapping)
+                elif key == b'C':
+                    return b'M'  # Right arrow
+                elif key == b'D':
+                    return b'K'  # Left arrow
+        return key
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -166,12 +158,8 @@ def view_file(filepath):
 
             # Handle keyboard input - cross-platform
             key = getch()
-            # Fix special key handling to prevent returning to the menu
             if key == b'\x1b':  # ESC
-                if current_page == 0:
-                    break  # Exit only if on the first page
-                else:
-                    continue  # Ignore accidental ESC presses during navigation
+                break
             elif key == b'/':  # Search
                 search_term = input(f"\n{Fore.WHITE}Search: {Style.RESET_ALL}").lower()
                 if search_term:
@@ -183,10 +171,6 @@ def view_file(filepath):
                             break
             elif key == b'\xe0' or (platform.system() != 'Windows' and key == b'\x1b'):  # Special key prefix
                 key = get_special_key()
-                # Fix to prevent special key sequences from being displayed
-                if key in [b'H', b'P', b'M', b'K', b'H', b'F']:
-                    # Handle navigation without displaying the key
-                    continue
                 if key == b'K':  # Left arrow
                     current_page = max(0, current_page - 1)
                 elif key == b'M':  # Right arrow

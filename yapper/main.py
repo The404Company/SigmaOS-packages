@@ -216,16 +216,8 @@ def editor(filename=None):
         if key is None:
             continue
             
-        # Fix special key handling to prevent unintended exits
         if key == 'exit':
-            if cursor_y == 0 and cursor_x == 0 and not is_modified():
-                break  # Exit only if at the start and no changes
-            else:
-                continue  # Ignore accidental ESC presses during editing
-        # Fix to prevent special key sequences from being written to the editor
-        if key in ['up', 'down', 'left', 'right', 'home', 'end']:
-            # Handle navigation without writing the key
-            continue
+            break
         elif key == 'enter':
             current = content[cursor_y]
             indent = len(current) - len(current.lstrip())
