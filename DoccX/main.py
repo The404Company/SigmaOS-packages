@@ -3,57 +3,65 @@ import sys
 from colorama import Fore, Style, init, Back
 import platform
 
-# Cross-platform keyboard input
+# Updated cross-platform compatibility for keyboard input and file operations
 if platform.system() == 'Windows':
     import msvcrt
-    
+
     def getch():
         """Get a single character from the user (Windows)"""
         return msvcrt.getch()
-    
+
     def get_special_key():
         """Handle special keys like arrows (Windows)"""
-        key = msvcrt.getch()
-        return key
+        if msvcrt.kbhit():
+            key = msvcrt.getch()
+            if key == b'\xe0':  # Special key prefix
+                return msvcrt.getch()
+            return key
+        return None
 else:
-    # For Linux/Mac
     import termios
     import tty
     import select
-    
+
     def getch():
         """Get a single character from the user (Unix)"""
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
         try:
             tty.setraw(fd)
-            if select.select([sys.stdin], [], [], 0.1)[0]:
-                ch = sys.stdin.read(1)
-            else:
-                ch = ''
+            ch = sys.stdin.read(1)
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch.encode('utf-8') if ch else b''
-    
+        return ch.encode()
+
     def get_special_key():
         """Handle special keys like arrows (Unix)"""
-        # In Linux, arrow keys are represented by escape sequences
-        # First character is escape (27), second is '[', third is the specific key
-        key = getch()
-        if key == b'\x1b':
-            key = getch()  # should be b'['
-            if key == b'[':
-                key = getch()
-                # Map to Windows-style codes for compatibility
-                if key == b'A':
-                    return b'H'  # Up arrow -> Home (simplified mapping)
-                elif key == b'B':
-                    return b'F'  # Down arrow -> End (simplified mapping)
-                elif key == b'C':
-                    return b'M'  # Right arrow
-                elif key == b'D':
-                    return b'K'  # Left arrow
-        return key
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            [i, _, _] = select.select([sys.stdin], [], [], 0.1)
+            if i:
+                key = sys.stdin.read(1)
+                if key == '\x1b':  # Escape sequence
+                    key += sys.stdin.read(2)  # Read next two characters for arrow keys
+                    if key == '\x1b[A':  # Up arrow
+                        return b'H'
+                    elif key == '\x1b[B':  # Down arrow
+                        return b'P'
+                    elif key == '\x1b[C':  # Right arrow
+                        return b'M'
+                    elif key == '\x1b[D':  # Left arrow
+                        return b'K'
+                    elif key == '\x1b[1~':  # Home
+                        return b'H'
+                    elif key == '\x1b[4~':  # End
+                        return b'F'
+                return key.encode()
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return None
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
