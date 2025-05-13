@@ -183,6 +183,10 @@ def view_file(filepath):
                             break
             elif key == b'\xe0' or (platform.system() != 'Windows' and key == b'\x1b'):  # Special key prefix
                 key = get_special_key()
+                # Fix to prevent special key sequences from being displayed
+                if key in [b'H', b'P', b'M', b'K', b'H', b'F']:
+                    # Handle navigation without displaying the key
+                    continue
                 if key == b'K':  # Left arrow
                     current_page = max(0, current_page - 1)
                 elif key == b'M':  # Right arrow

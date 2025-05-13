@@ -222,6 +222,10 @@ def editor(filename=None):
                 break  # Exit only if at the start and no changes
             else:
                 continue  # Ignore accidental ESC presses during editing
+        # Fix to prevent special key sequences from being written to the editor
+        if key in ['up', 'down', 'left', 'right', 'home', 'end']:
+            # Handle navigation without writing the key
+            continue
         elif key == 'enter':
             current = content[cursor_y]
             indent = len(current) - len(current.lstrip())
