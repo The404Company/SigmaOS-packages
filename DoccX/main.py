@@ -166,8 +166,12 @@ def view_file(filepath):
 
             # Handle keyboard input - cross-platform
             key = getch()
+            # Fix special key handling to prevent returning to the menu
             if key == b'\x1b':  # ESC
-                break
+                if current_page == 0:
+                    break  # Exit only if on the first page
+                else:
+                    continue  # Ignore accidental ESC presses during navigation
             elif key == b'/':  # Search
                 search_term = input(f"\n{Fore.WHITE}Search: {Style.RESET_ALL}").lower()
                 if search_term:
