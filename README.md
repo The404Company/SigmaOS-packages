@@ -3,10 +3,6 @@
 ![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen)
 [![Discord](https://img.shields.io/discord/1362801147202638145?label=discord)](https://discord.gg/KxUfgTszjN)
 
-
-Official repository for SigmaOS packages.
-
-
 ## Overview
 
 This repository contains official and community-contributed packages for SigmaOS.
