@@ -1,0 +1,12 @@
+[description]
+SIGArt - Convert PNG images to ASCII art.
+
+[author]
+SigmaOS-Team
+
+[version]
+1.0
+
+[requirements]
+Pillow
+json
